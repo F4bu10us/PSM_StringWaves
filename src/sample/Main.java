@@ -2,26 +2,21 @@ package sample;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.stage.Stage;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 public class Main extends Application {
-    Logic l = new Logic();
-    XYChart.Series series = new XYChart.Series();
+    private Logic l = new Logic();
+    private XYChart.Series<Double,Double> series = new XYChart.Series<>();
     private ExecutorService executor;
 
-    public void init(Stage primaryStage){
-//        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
+    private void init(Stage primaryStage){
         primaryStage.setTitle("String");
 
         NumberAxis xAxis = new NumberAxis(-1, 7, 10);
@@ -34,10 +29,8 @@ public class Main extends Application {
 
         series.setName("String vibration");
 
-        LineChart linechart = new LineChart(xAxis, yAxis);
-        //------------------
-        setDataIntoSeries();
-        //------------------
+        LineChart linechart = new LineChart<>(xAxis, yAxis);
+
         linechart.getData().add(series);
 
         Group root = new Group(linechart);
@@ -45,37 +38,35 @@ public class Main extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception{
+    public void start(Stage primaryStage) {
         init(primaryStage);
-        primaryStage.show();
 
 
-        executor = Executors.newCachedThreadPool(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                return thread;
-            }
+
+        executor = Executors.newCachedThreadPool(r -> {
+            Thread thread = new Thread(r);
+            thread.setDaemon(true);
+            return thread;
         });
         AddToQueue addToQueue = new AddToQueue();
         executor.execute(addToQueue);
         //-- Prepare Timeline
         prepareTimeline();
+
+        primaryStage.show();
     }
 
-    public void setDataIntoSeries(){
+    private void setDataIntoSeries(){
         series.getData().clear();
         for(int i = 0; i<l.x.length; ++i){
-            System.out.println(l.x.length);
-            series.getData().add(new XYChart.Data(l.x[i], l.f[i]));
+            series.getData().add(new XYChart.Data<>(l.x[i], l.f[i]));
+//            series.getData().clear();
         }
     }
 
     private class AddToQueue implements Runnable {
         public void run() {
             try {
-                // add a item of data to queue
                 l.move();
                 Thread.sleep(100);
                 executor.execute(this);
@@ -95,7 +86,7 @@ public class Main extends Application {
         }.start();
     }
 
-    public void setters(NumberAxis axis){
+    private void setters(NumberAxis axis){
         axis.setForceZeroInRange(false);
         axis.setAutoRanging(false);
         axis.setTickLabelsVisible(false);
